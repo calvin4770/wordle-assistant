@@ -1,5 +1,5 @@
-from operator import ne
-from dag import *
+from dag import DAG
+from data_analysis import word_ranks
 
 def main():
     positive, negative, banned = {}, {}, {}
@@ -27,9 +27,9 @@ def main():
                     banned[word[i]] = []
                 else:
                     negative[word[i]].append(i)
-        l = dag.get_constrained_word_list(positive, negative, banned)
-        print("Possible words:")
-        print(l)
+        word_list = dag.get_constrained_word_list(positive, negative, banned)
+        print("Top 10 words sorted by rank: ")
+        print(word_ranks(word_list, positive, negative, banned)[:10])
         word = input("Input chosen word: ")
 
 if __name__ == "__main__":
