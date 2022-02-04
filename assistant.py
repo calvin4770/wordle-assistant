@@ -10,7 +10,7 @@ class Scorer:
         self.c3 = []
 
     def score_word(self, word):
-        return -1
+        pass
 
     def update_scorer(self, words, c1, c2, c3):
         self.words = words
@@ -40,6 +40,32 @@ class FrequencyHeuristicScorer(Scorer):
                     self.char_freqs[c] = 0
                 if c not in word[:i]:
                     self.char_freqs[c] += 1
+
+class WordReachScorer(Scorer):
+    def __init__(self) -> None:
+        super().__init__()
+        self.word_map = {}
+        self.explored_chars = set([])
+
+    def score_word(self, word):
+        new_chars = list(filter(lambda c: c not in self.explored_chars, word))
+        reachable_words = set([])
+        for c in new_chars:
+            reachable_words = reachable_words.union(self.word_map[c])
+        return len(reachable_words)
+
+    def update_scorer(self, words, c1, c2, c3):
+        super().update_scorer(words, c1, c2, c3)
+        self.word_map = {}
+        self.explored_chars = {}
+        for w in words:
+            for c in w:
+                if c not in self.word_map:
+                    self.word_map[c] = set([])
+                self.word_map[c].add(w)
+        l1 = set(map(lambda x: x[0], self.c1))
+        l2 = set(map(lambda x: x[0], self.c2))
+        self.explored_chars = l1.union(l2)
 
 # returns if word is plausible given constraints
 def is_plausible(word, c1, c2, c3):

@@ -4,7 +4,7 @@ import data_loader
 def main():
     words = data_loader.load_data("data/words.csv")
     c1, c2, c3 = [], [], []
-    scorer = assistant.FrequencyHeuristicScorer()
+    scorer = assistant.WordReachScorer()
     
     while True:
         print("Top 10 words sorted by rank: ")
@@ -31,6 +31,7 @@ def main():
                     c3.append(c)
                 elif x not in c2:
                     c2.append(x)
+        words = assistant.get_constrained_list(words, c1, c2, c3)
         
 
 if __name__ == "__main__":
