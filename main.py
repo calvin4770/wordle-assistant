@@ -4,9 +4,13 @@ from data_analysis import word_ranks
 def main():
     positive, negative, banned = {}, {}, {}
     dag = DAG()
-    print("Try adieu")
-    word = "adieu"
+    
     while True:
+        word_list = dag.get_constrained_word_list(positive, negative, banned)
+        print("Top 10 words sorted by rank: ")
+        print(word_ranks(word_list, positive, negative, banned)[:10])
+        word = input("Input chosen word: ")
+        
         done = input("Done? ")
         if done == "y": break
         in1 = input("Indices of characters in right location: ")
@@ -27,10 +31,7 @@ def main():
                     banned[word[i]] = []
                 else:
                     negative[word[i]].append(i)
-        word_list = dag.get_constrained_word_list(positive, negative, banned)
-        print("Top 10 words sorted by rank: ")
-        print(word_ranks(word_list, positive, negative, banned)[:10])
-        word = input("Input chosen word: ")
+        
 
 if __name__ == "__main__":
     main()
