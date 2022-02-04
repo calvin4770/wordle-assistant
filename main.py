@@ -1,16 +1,15 @@
-from dag import DAG
-from data_analysis import word_ranks
+import assistant
+import data_loader
 
 def main():
-    positive, negative, banned = {}, {}, {}
-    dag = DAG()
+    words = data_loader.load_data("data/words.csv")
+    c1, c2, c3 = [], [], []
+    scorer = assistant.FrequencyHeuristicScorer()
     
     while True:
-        word_list = dag.get_constrained_word_list(positive, negative, banned)
         print("Top 10 words sorted by rank: ")
-        print(word_ranks(word_list, positive, negative, banned)[:10])
+        print(assistant.words_ranked_by_score(words, scorer, c1, c2, c3)[:10])
         word = input("Input chosen word: ")
-        
         done = input("Done? ")
         if done == "y": break
         in1 = input("Indices of characters in right location: ")
@@ -18,19 +17,20 @@ def main():
         idxs1 = [] if in1 == "" else [int(x) for x in in1.split(" ")]
         idxs2 = [] if in2 == "" else [int(x) for x in in2.split(" ")]
         for i in idxs1:
-            if word[i] not in positive:
-                positive[word[i]] = []
-            positive[word[i]].append(i)
+            x = (i, word[i])
+            if x not in c1:
+                c1.append(x)
         for i in idxs2:
-            if word[i] not in negative:
-                negative[word[i]] = []
-            negative[word[i]].append(i)
-        for i in range(len(word)):
+            x = (i, word[i])
+            if x not in c2:
+                c2.append(x)
+        for x in enumerate(word):
+            i, c = x
             if i not in idxs1 and i not in idxs2:
-                if word[i] not in positive and word[i] not in negative:
-                    banned[word[i]] = []
-                else:
-                    negative[word[i]].append(i)
+                if x not in c1 and x not in c2:
+                    c3.append(c)
+                elif x not in c2:
+                    c2.append(x)
         
 
 if __name__ == "__main__":
