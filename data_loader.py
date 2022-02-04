@@ -1,15 +1,11 @@
-import json
+import csv
 
 def load_data(path):
     with open(path) as f:
-        data = list(json.load(f).keys())
+        data = list(csv.reader(f))[0]
     return data
 
-def filter_data(data, n_chars):
-    return list(filter(lambda x: len(x) == n_chars, data))
-
 if __name__ == "__main__":
-    data = load_data("words_dictionary.json")
-    data = filter_data(data, 5)
-    print(data[:1000])
+    data = load_data("data/words.csv")
+    print(data[:100])
     print(len(data))
