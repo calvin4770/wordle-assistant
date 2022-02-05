@@ -75,7 +75,17 @@ def is_plausible(word, c1, c2, c3):
     return c1_holds and c2_holds and c3_holds
 
 def get_constrained_list(words, c1, c2, c3):
-    return list(filter(lambda w: is_plausible(w, c1, c2, c3), words))    
+    return list(filter(lambda w: is_plausible(w, c1, c2, c3), words))  
+
+def greedy_word_choice(words, scorer, c1, c2, c3):
+    scorer.update_scorer(words, c1, c2, c3)
+    word, max_score = "", -1
+    for w in words:
+        score = scorer.score_word(w)
+        if score > max_score:
+            word = w
+            max_score = score
+    return word
 
 def words_ranked_by_score(words, scorer, c1, c2, c3):
     scorer.update_scorer(words, c1, c2, c3)
