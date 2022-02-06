@@ -1,9 +1,11 @@
+import math
+
 # c1: characters in right location; [(Index, Character)]
 # c2: characters in wrong location; map [(Index, Character)]
 # c3: characters not in word; [Characters]
 
 class Scorer:
-    def __init__(self) -> None:
+    def __init__(self):
         self.words = []
         self.c1 = []
         self.c2 = []
@@ -19,7 +21,7 @@ class Scorer:
         self.c3 = c3
 
 class FrequencyHeuristicScorer(Scorer):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
         self.char_freqs = {}
 
@@ -42,30 +44,45 @@ class FrequencyHeuristicScorer(Scorer):
                     self.char_freqs[c] += 1
 
 class WordReachScorer(Scorer):
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
-        self.word_map = {}
         self.explored_chars = set([])
+        self.reachable_words = set([])
+        self.new_chars = []
 
     def score_word(self, word):
-        new_chars = list(filter(lambda c: c not in self.explored_chars, word))
-        reachable_words = set([])
-        for c in new_chars:
-            reachable_words = reachable_words.union(self.word_map[c])
-        return len(reachable_words)
+        self.new_chars = list(filter(lambda c: c not in self.explored_chars, word))
+        self.reachable_words = set([])
+        for w in self.words:
+            for c in self.new_chars:
+                if c in w:
+                    self.reachable_words.add(w)
+                    break
+        return len(self.reachable_words)
 
     def update_scorer(self, words, c1, c2, c3):
         super().update_scorer(words, c1, c2, c3)
-        self.word_map = {}
         self.explored_chars = {}
-        for w in words:
-            for c in w:
-                if c not in self.word_map:
-                    self.word_map[c] = set([])
-                self.word_map[c].add(w)
         l1 = set(map(lambda x: x[0], self.c1))
         l2 = set(map(lambda x: x[0], self.c2))
         self.explored_chars = l1.union(l2)
+
+class WeightedWordReachScorer(WordReachScorer):
+    def score_word(self, word):
+        super().score_word(word)
+        return sum(map(lambda w: self.word_weight(word, w), self.reachable_words))
+
+    # weight of word w given query word word
+    def word_weight(self, word, w):
+        weight = 1
+        for i, c in enumerate(w):
+            if c in self.new_chars and c not in w[:i]:
+                weight += 1
+            if c == word[i] and (i, c) not in self.c1:
+                weight += 1
+        return weight
+
+
 
 # returns if word is plausible given constraints
 def is_plausible(word, c1, c2, c3):

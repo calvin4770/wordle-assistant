@@ -4,7 +4,7 @@ import data_loader
 def main():
     words = data_loader.load_data("data/words.csv")
     c1, c2, c3 = [], [], []
-    scorer = assistant.WordReachScorer()
+    scorer = assistant.WeightedWordReachScorer()
     
     while True:
         print("Top 10 words sorted by rank: ")
