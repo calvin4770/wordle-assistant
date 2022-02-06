@@ -3,14 +3,23 @@ import data_loader
 import assistant
 import copy
 import tqdm
+import random
 
-def evaluate_scorer(scorer):
-    words = data_loader.load_data("data/words.csv")
+def evaluate_scorer(scorer, sample=False, num_samples=50, output=False):
+    if output:
+        print(f"Scorer: {scorer}")
+    all_words = words = data_loader.load_data("data/words.csv")
+    if sample:
+        words = random.sample(all_words, num_samples)
     lengths = []
-    first_guess = first_word(words, scorer)
+    first_guess = first_word(all_words, scorer)
+    if output:
+        print(f"First guess: {first_guess}")
     for word in tqdm.tqdm(words):
-        lengths.append(guess_length_given_first_word(words, word, scorer, first_guess))
+        lengths.append(guess_length_given_first_word(all_words, word, scorer, first_guess))
     lengths = np.array(lengths)
+    if output:
+        print(f"Mean length: {np.mean(lengths)}, Standard deviation:{np.std(lengths)}")
     return np.mean(lengths), np.std(lengths)
 
 def guess_length_given_first_word(words, word, scorer, first_word):
@@ -35,4 +44,7 @@ def first_word(words, scorer):
     return assistant.greedy_word_choice(words, scorer, [], [], [])
 
 if __name__ == "__main__":
-    print(evaluate_scorer(assistant.WordReachScorer()))
+    #scorers = [assistant.FrequencyHeuristicScorer(), assistant.WordReachScorer(), assistant.WeightedWordReachScorer()]
+    scorers = [assistant.WeightedWordReachScorer()]
+    for scorer in scorers:
+        evaluate_scorer(scorer, sample=True, num_samples=1000, output=True)
