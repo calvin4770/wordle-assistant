@@ -16,6 +16,7 @@ class Scorer:
         self.c2 = set([])
         self.c3 = set([])
         self.use_all_words = use_all_words
+        self.first_word = None
 
     def score_word(self, word):
         pass
@@ -27,6 +28,8 @@ class Scorer:
         self.c3 = c3
 
     def greedy_word_choice(self):
+        if len(self.words) == len(self.all_words) and first_word is not None:
+            return first_word
         words = self.all_words if self.use_all_words else self.words
         word, max_score = "", -10e10 # very small number
         for w in words:
@@ -107,6 +110,7 @@ class EntropyScorer(Scorer):
     def __init__(self):
         super().__init__()
         self.use_all_words = True
+        self.first_word = "tares"
 
     def score_word(self, word):
         N = len(self.words)
