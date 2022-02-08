@@ -27,24 +27,24 @@ def guess_length_given_first_word(words, word, scorer, first_word):
     guess = copy.copy(first_word)
     words_list = copy.copy(words)
     while guess != word:
-        c1, c2, c3 = [], [], []
+        c1, c2, c3 = set([]), set([]), set([])
         for i, c in enumerate(guess):
             if c == word[i]:
-                c1.append((i, c))
+                c1.add((i, c))
             elif c in word:
-                c2.append((i, c))
+                c2.add((i, c))
             else:
-                c3.append(c)
+                c3.add(c)
         words_list = assistant.get_constrained_list(words_list, c1, c2, c3)
-        guess = assistant.greedy_word_choice(words_list, scorer, c1, c2, c3)
+        scorer.update(words_list, c1, c2, c3)
+        guess = scorer.greedy_word_choice()
         length += 1
     return length
 
 def first_word(words, scorer):
-    return assistant.greedy_word_choice(words, scorer, [], [], [])
+    return scorer.greedy_word_choice()
 
 if __name__ == "__main__":
-    #scorers = [assistant.FrequencyHeuristicScorer(), assistant.WordReachScorer(), assistant.WeightedWordReachScorer()]
-    scorers = [assistant.WeightedWordReachScorer()]
+    scorers = [assistant.EntropyScorer()]
     for scorer in scorers:
-        evaluate_scorer(scorer, sample=True, num_samples=1000, output=True)
+        evaluate_scorer(scorer, sample=True, num_samples=50, output=True)

@@ -1,24 +1,44 @@
 import math
+import random
+import itertools
+import data_loader
+import copy
 
 # c1: characters in right location; [(Index, Character)]
 # c2: characters in wrong location; map [(Index, Character)]
 # c3: characters not in word; [Characters]
 
 class Scorer:
-    def __init__(self):
-        self.words = []
-        self.c1 = []
-        self.c2 = []
-        self.c3 = []
+    def __init__(self, use_all_words=False):
+        self.all_words = data_loader.load_data("data/words.csv")
+        self.words = copy.copy(self.all_words)
+        self.c1 = set([])
+        self.c2 = set([])
+        self.c3 = set([])
+        self.use_all_words = use_all_words
 
     def score_word(self, word):
         pass
 
-    def update_scorer(self, words, c1, c2, c3):
+    def update(self, words, c1, c2, c3):
         self.words = words
         self.c1 = c1
         self.c2 = c2
         self.c3 = c3
+
+    def greedy_word_choice(self):
+        words = self.all_words if self.use_all_words else self.words
+        word, max_score = "", -10e10 # very small number
+        for w in words:
+            score = self.score_word(w)
+            if score > max_score:
+                word = w
+                max_score = score
+        return word
+
+    def words_ranked_by_score(self):
+        words = self.all_words if self.use_all_words else self.words
+        return sorted(words, key=self.score_word, reverse=True)
 
 class FrequencyHeuristicScorer(Scorer):
     def __init__(self):
@@ -33,8 +53,8 @@ class FrequencyHeuristicScorer(Scorer):
                 score += self.char_freqs[c]
         return score
 
-    def update_scorer(self, words, c1, c2, c3):
-        super().update_scorer(words, c1, c2, c3)
+    def update(self, words, c1, c2, c3):
+        super().update(words, c1, c2, c3)
         self.char_freqs = {}
         for word in words:
             for i, c in enumerate(word):
@@ -60,8 +80,8 @@ class WordReachScorer(Scorer):
                     break
         return len(self.reachable_words)
 
-    def update_scorer(self, words, c1, c2, c3):
-        super().update_scorer(words, c1, c2, c3)
+    def update(self, words, c1, c2, c3):
+        super().update(words, c1, c2, c3)
         self.explored_chars = {}
         l1 = set(map(lambda x: x[0], self.c1))
         l2 = set(map(lambda x: x[0], self.c2))
@@ -83,6 +103,42 @@ class WeightedWordReachScorer(WordReachScorer):
         return weight
 
 
+class EntropyScorer(Scorer):
+    def __init__(self):
+        super().__init__()
+        self.use_all_words = True
+
+    def score_word(self, word):
+        N = len(self.words)
+        if N == 1:
+            return 1 if word == self.words[0] else 0
+
+        entropy = 0
+        perm_dist = {}
+
+        for ans in self.words:
+            perm = induced_permutation(word, ans)
+            if perm not in perm_dist:
+                perm_dist[perm] = 0
+            perm_dist[perm] += 1
+
+        for perm in perm_dist:
+            p = perm_dist[perm] / N
+            if p > 0:
+                entropy -= p * math.log(p, 2)
+        return entropy
+
+
+# 0: black, 1: yellow, 2: green
+def induced_permutation(guess, answer):
+    perm = [0, 0, 0, 0, 0]
+    c1, c2, c3 = get_constraints_given_word(answer, guess)
+    for i, c in c1:
+        perm[i] = 2
+    for i, c in c2:
+        perm[i] = 1
+    return tuple(perm)
+
 
 # returns if word is plausible given constraints
 def is_plausible(word, c1, c2, c3):
@@ -92,19 +148,17 @@ def is_plausible(word, c1, c2, c3):
     return c1_holds and c2_holds and c3_holds
 
 def get_constrained_list(words, c1, c2, c3):
-    return list(filter(lambda w: is_plausible(w, c1, c2, c3), words))  
+    return list(filter(lambda w: is_plausible(w, c1, c2, c3), words))
 
-def greedy_word_choice(words, scorer, c1, c2, c3):
-    scorer.update_scorer(words, c1, c2, c3)
-    word, max_score = "", -1
-    for w in words:
-        score = scorer.score_word(w)
-        if score > max_score:
-            word = w
-            max_score = score
-    return word
-
-def words_ranked_by_score(words, scorer, c1, c2, c3):
-    scorer.update_scorer(words, c1, c2, c3)
-    return sorted(list(words), key=scorer.score_word, reverse=True)
+# get constraints for input guess supposing word is the answer
+def get_constraints_given_word(word, guess):
+    c1, c2, c3 = set([]), set([]), set([])
+    for i, c in enumerate(guess):
+        if c == word[i]:
+            c1.add((i, c))
+        elif c in word:
+            c2.add((i, c))
+        else:
+            c3.add(c)
+    return c1, c2, c3
     
